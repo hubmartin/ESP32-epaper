@@ -36,18 +36,6 @@ driver.get(url)
 screenshot = driver.save_screenshot('my_screenshot.png')
 driver.quit()
 
-
-im = Image.open("355.png")
-scaled = im \
-    .crop((45,195,477,787))
-
-scaled.save("scaled.png")
-
-rotated = scaled \
-    .rotate(270, expand=True)
-
-rotated.save("rotated.png")
-
 screenshot = Image.open("my_screenshot.png")
 
 target = screenshot \
