@@ -7,6 +7,7 @@ import datetime
 
 import os, sys
 from PIL import Image
+from io import BytesIO
 
 IP = "esp-epaper.local"
 PORT = 3333
@@ -29,14 +30,19 @@ from selenium import webdriver
 
 url="https://data.pocasi-data.cz//static/html/meteogram-v2.html#x=178&y=171"
 
+chrome_options = webdriver.chrome.options.Options()
+chrome_options.add_argument("--headless")
+chrome_options.add_argument("--window-size=400,300")
+#chrome_options.add_argument("--window-size=512,384")
+
 DRIVER = 'chromedriver'
-driver = webdriver.Chrome(DRIVER)
-driver.set_window_size(512, 384)
+driver = webdriver.Chrome(DRIVER, options=chrome_options)
+#driver.set_window_size(512, 384)
 driver.get(url)
-screenshot = driver.save_screenshot('my_screenshot.png')
+screenshot = driver.get_screenshot_as_png()
 driver.quit()
 
-screenshot = Image.open("my_screenshot.png")
+screenshot = Image.open(BytesIO(screenshot))
 
 target = screenshot \
     .convert(mode="L") \
@@ -55,7 +61,7 @@ for y in range(0,300):
     for x in range(0,400):
         pixel = target.getpixel((x, y))
         b = b"\x00"
-        if pixel < 240:
+        if pixel < 250:
             b = b"\x01"
         sock.send(b)
 
