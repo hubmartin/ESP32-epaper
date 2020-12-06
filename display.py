@@ -9,7 +9,7 @@ import os, sys
 from PIL import Image
 from io import BytesIO
 
-IP = "esp-epaper.local"
+IP = "192.168.1.18"
 PORT = 3333
 
 from selenium import webdriver
@@ -28,7 +28,7 @@ from selenium import webdriver
 #10-24 19:44:18.637 27582 27582 D b.a.a.f.b$c: [main] https://data.pocasi-data.cz//static/html/meteogram-v2.html#x=178&y=171
 
 
-url="https://data.pocasi-data.cz//static/html/meteogram-v2.html#x=178&y=171"
+url="https://data.pocasi-data.cz//static/html/meteogram-v2.html#x=84&y=407"
 
 chrome_options = webdriver.chrome.options.Options()
 chrome_options.add_argument("--headless")
