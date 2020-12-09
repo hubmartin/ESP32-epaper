@@ -16,7 +16,7 @@
 #include <ESPmDNS.h>
 #include <WebServer.h>
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
-#include <ArduinoOTA.h>
+//#include <ArduinoOTA.h>
 
 #endif
 
@@ -157,7 +157,7 @@ void setup()
   // Password can be set with it's md5 value as well
   // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
   // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
-
+/*
   ArduinoOTA
     .onStart([]() {
       String type;
@@ -185,7 +185,7 @@ void setup()
     });
 
   ArduinoOTA.begin();
-
+*/
 }
 
 bool clientConnected = false;
@@ -197,7 +197,7 @@ void loop22()
 }
 
 void loop() {
-  ArduinoOTA.handle();
+  //ArduinoOTA.handle();
   //wifiManager.process();
 
 
@@ -209,6 +209,8 @@ void loop() {
   }*/
 
   if (wifiServer.hasClient()) {
+      Serial.println("Has client");
+
       client = wifiServer.available();
       clientConnected = true;
       pixel = 0;
@@ -216,13 +218,18 @@ void loop() {
       //display.init();
       display.init(115200, true, 2); // 7.5"
       Serial.println("Display init");
+      
       display.setFullWindow();
+      
+      
+      //display.setPartialWindow(0, 0, display.width(), display.height() / 2);
       display.firstPage();
 
       display.writeScreenBuffer();
   }
 
   if (client.connected()){
+    Serial.printf("Client connected");
     if (int toRead = client.available()){
       Serial.printf("Client read tot %d", toRead);
       if (toRead > 100){
@@ -246,6 +253,14 @@ void loop() {
         }
         int x = pixel % 480; // display.width();
         int y = pixel / 480; //display.width();
+
+       /* // Switch to next page in half of the screen
+        if(x == 0 && y == 240)
+        {
+              Serial.println("Next page");
+              display.nextPage();
+        }*/
+
         display.drawPixel(x, y, color);
         //Serial.printf("[%d,%d,%d],", x, y, color);
         pixel++;
@@ -255,6 +270,7 @@ void loop() {
     Serial.printf("Pixels %d", pixel);
     clientConnected = false;
     display.nextPage();
+
     display.refresh();
   }
 
