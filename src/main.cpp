@@ -55,7 +55,7 @@ the rest of pins is in the constructor below
 #endif
 
 #ifdef EPAPER_750_T7
-  GxEPD2_BW<GxEPD2_750_T7, GxEPD2_750_T7::HEIGHT / 2> display(GxEPD2_750_T7(/*CS=*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
+  GxEPD2_BW<GxEPD2_750_T7, GxEPD2_750_T7::HEIGHT> display(GxEPD2_750_T7(/*CS=*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
   //#define DISPLAY_WIDTH 480
   //#define DISPLAY_HEIGHT 480
 #endif
