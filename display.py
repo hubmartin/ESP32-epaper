@@ -9,8 +9,11 @@ import os, sys
 from PIL import Image
 from io import BytesIO
 
-IP = "192.168.1.18"
+IP = "192.168.1.10"
 PORT = 3333
+
+DISPLAY_WIDTH = 480
+DISPLAY_HEIGHT = 480
 
 from selenium import webdriver
 
@@ -32,8 +35,9 @@ url="https://data.pocasi-data.cz//static/html/meteogram-v2.html#x=84&y=407"
 
 chrome_options = webdriver.chrome.options.Options()
 chrome_options.add_argument("--headless")
-chrome_options.add_argument("--window-size=400,300")
+#chrome_options.add_argument("--window-size=400,300")
 #chrome_options.add_argument("--window-size=512,384")
+chrome_options.add_argument("--window-size=480,480")
 
 DRIVER = 'chromedriver'
 driver = webdriver.Chrome(DRIVER, options=chrome_options)
@@ -46,7 +50,7 @@ screenshot = Image.open(BytesIO(screenshot))
 
 target = screenshot \
     .convert(mode="L") \
-    .resize((400, 300))
+    .resize((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 
 target.save("out.png")
 
@@ -57,12 +61,13 @@ print('connecting to %s port %s' % server_address)
 sock.connect(server_address)
 print("connected")
 
-for y in range(0,300):
-    for x in range(0,400):
+for y in range(0, DISPLAY_HEIGHT):
+    for x in range(0, DISPLAY_WIDTH):
         pixel = target.getpixel((x, y))
         b = b"\x00"
         if pixel < 250:
             b = b"\x01"
         sock.send(b)
+        print(x,y);
 
 sock.close()

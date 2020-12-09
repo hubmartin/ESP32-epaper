@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <GxEPD2_3C.h>
+#include <GxEPD2_BW.h>
+
 
 #include <Adafruit_I2CDevice.h>
 
@@ -39,12 +41,27 @@ SPI MOSI - IO23
 the rest of pins is in the constructor below
 */
 
-//GxEPD2_3C<GxEPD2_420c, GxEPD2_420c::HEIGHT> display(GxEPD2_420c(/*CS=D8*/ SS, /*DC=D3*/ D4, /*RST=D4*/ D3, /*BUSY=D2*/ D2));
-GxEPD2_3C<GxEPD2_420c, GxEPD2_420c::HEIGHT> display(GxEPD2_420c(/*CS=*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
+#define EPAPER_750_T7
+//#define EPAPER_420c
 
+//GxEPD2_3C<GxEPD2_270c, GxEPD2_270c::HEIGHT> display(GxEPD2_270c(/*CS=*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
+
+//GxEPD2_3C<GxEPD2_420c, GxEPD2_420c::HEIGHT> display(GxEPD2_420c(/*CS=*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
+
+#ifdef EPAPER_420c
+  GxEPD2_3C<GxEPD2_420c, GxEPD2_420c::HEIGHT> display(GxEPD2_420c(/*CS=*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
+  #define DISPLAY_WIDTH 400
+  #define DISPLAY_HEIGHT 300
+#endif
+
+#ifdef EPAPER_750_T7
+  GxEPD2_BW<GxEPD2_750_T7, GxEPD2_750_T7::HEIGHT / 4> display(GxEPD2_750_T7(/*CS=*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
+  //#define DISPLAY_WIDTH 480
+  //#define DISPLAY_HEIGHT 480
+#endif
 
 WiFiManager wifiManager;
-
+/*
 void drawHelloWorld() {
 
   display.setFullWindow();
@@ -52,8 +69,8 @@ void drawHelloWorld() {
 
   display.writeScreenBuffer();
 
-  for (int y=0; y<300; y++ ){
-    for (int x=0; x<400; x++ ){
+  for (int y=0; y < DISPLAY_HEIGHT; y++ ){
+    for (int x=0; x < DISPLAY_WIDTH; x++ ){
       display.drawPixel(x, y, GxEPD_RED);
     }
   }
@@ -61,6 +78,31 @@ void drawHelloWorld() {
   display.nextPage();
   display.refresh();
 
+}*/
+
+RTC_DATA_ATTR int bootCount = 0;
+
+void setup22()
+{
+  Serial.begin(115200);
+
+  bootCount++;
+  Serial.println("wakeup" + String(bootCount));
+
+  pinMode(2, OUTPUT);
+  
+  digitalWrite(2, HIGH);
+  delay(1000);
+  digitalWrite(2, LOW);
+
+  Serial.println("Going to sleep now");
+  delay(200);
+  Serial.flush(); 
+
+  #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
+  #define TIME_TO_SLEEP  5        /* Time ESP32 will go to sleep (in seconds) */
+  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
+  esp_deep_sleep_start();
 }
 
 void setup()
@@ -149,6 +191,11 @@ void setup()
 bool clientConnected = false;
 uint32_t pixel;
 
+void loop22()
+{
+
+}
+
 void loop() {
   ArduinoOTA.handle();
   //wifiManager.process();
@@ -166,7 +213,9 @@ void loop() {
       clientConnected = true;
       pixel = 0;
 
-      display.init();
+      //display.init();
+      display.init(115200, true, 2); // 7.5"
+      Serial.println("Display init");
       display.setFullWindow();
       display.firstPage();
 
@@ -175,25 +224,30 @@ void loop() {
 
   if (client.connected()){
     if (int toRead = client.available()){
+      Serial.printf("Client read tot %d", toRead);
       if (toRead > 100){
         toRead = 100;
       }
       char buf[toRead];
       toRead = client.readBytes(buf, toRead);
+      Serial.printf("Client read %d", toRead);
       for (int i=0; i<toRead; i++){
-        int col = GxEPD_WHITE;
+        int color = GxEPD_WHITE;
         switch (buf[i]){
           case 0:
-            col = GxEPD_WHITE;
+            color = GxEPD_WHITE;
             break;
           case 1:
-            col = GxEPD_BLACK;
+            color = GxEPD_BLACK;
             break;
           case 2:
-            col = GxEPD_RED;
+            color = GxEPD_RED;
             break;
         }
-        display.drawPixel(pixel % display.width(), pixel / display.width(), col);
+        int x = pixel % 480; // display.width();
+        int y = pixel / 480; //display.width();
+        display.drawPixel(x, y, color);
+        //Serial.printf("[%d,%d,%d],", x, y, color);
         pixel++;
       }
     }
