@@ -217,7 +217,8 @@ void loop() {
 
       //display.init();
       display.init(115200, true, 2); // 7.5"
-      Serial.println("Display init");
+
+      Serial.printf("Display init width: %d", display.width());
       
       display.setFullWindow();
       
@@ -251,8 +252,8 @@ void loop() {
             color = GxEPD_RED;
             break;
         }
-        int x = pixel % 480; // display.width();
-        int y = pixel / 480; //display.width();
+        int x = pixel % display.width();
+        int y = pixel / display.width();
 
        /* // Switch to next page in half of the screen
         if(x == 0 && y == 240)

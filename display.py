@@ -12,7 +12,7 @@ from io import BytesIO
 IP = "192.168.1.10"
 PORT = 3333
 
-DISPLAY_WIDTH = 480
+DISPLAY_WIDTH = 800
 DISPLAY_HEIGHT = 480
 
 from selenium import webdriver
@@ -37,7 +37,7 @@ chrome_options = webdriver.chrome.options.Options()
 chrome_options.add_argument("--headless")
 #chrome_options.add_argument("--window-size=400,300")
 #chrome_options.add_argument("--window-size=512,384")
-chrome_options.add_argument("--window-size=480,480")
+chrome_options.add_argument("--window-size=800,480")
 
 DRIVER = 'chromedriver'
 driver = webdriver.Chrome(DRIVER, options=chrome_options)
