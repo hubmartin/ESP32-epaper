@@ -41,12 +41,16 @@ url="https://data.pocasi-data.cz//static/html/meteogram-v2.html#x=84&y=407"
 
 # Not proud, not efficient, working ok
 def rgb_to_3c(img):
-    img.save('imagemagick_in.png')
-    command = 'convert imagemagick_in.png -dither FloydSteinberg -define dither:diffusion-amount=80%% -remap eink-3color.png -type truecolor imagemagick_out.png'
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-    process.wait()
-    img_load = Image.open('imagemagick_out.png')
-    return img_load.convert('RGB')
+    if data['colors'] == 3:
+        img.save('imagemagick_in.png')
+        command = 'convert imagemagick_in.png -dither FloydSteinberg -define dither:diffusion-amount=80%% -remap eink-3color.png -type truecolor imagemagick_out.png'
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        process.wait()
+        img_load = Image.open('imagemagick_out.png')
+        return img_load.convert('RGB')
+
+    elif data['colors'] == 2:
+        return img.convert('1').convert('RGB')
 
 def drv_webpage(url):
     
@@ -152,6 +156,7 @@ def main(config):
                 b = b"\x02" #red
             elif pixel[0] > 100 and pixel[1] > 100 and pixel[2] > 100:
                 b = b"\x00" #white
+
                 
             sock.send(b)
             #print(x,y);
