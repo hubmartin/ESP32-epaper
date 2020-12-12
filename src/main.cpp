@@ -16,7 +16,6 @@
 #include <ESPmDNS.h>
 #include <WebServer.h>
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
-//#include <ArduinoOTA.h>
 
 #endif
 
@@ -30,10 +29,8 @@
 WiFiServer wifiServer(3333);
 WiFiClient client;
 
-
 /*
 SPI connection https://components101.com/microcontrollers/esp32-devkitc
-
 SPI SS - IO5 (D5)
 SPI SCK - IO18 (D18)
 SPI MISO - IO19
@@ -41,69 +38,50 @@ SPI MOSI - IO23
 the rest of pins is in the constructor below
 */
 
-//#define EPAPER_750_T7
-#define EPAPER_WAVESHARE_DEVIKT_420c
-#define WAVESHARE_ALTERNATE_SPI
-
+// Uncomment single display you use
+//#define EPAPER_270c
 //#define EPAPER_420c
+#define EPAPER_750_T7
 
-//GxEPD2_3C<GxEPD2_270c, GxEPD2_270c::HEIGHT> display(GxEPD2_270c(/*CS=*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
+// Uncomment if you're using Waveshare E-Paper ESP32 Driver Board
+#define WAVESHARE_ALTERNATE_PINS
 
-//GxEPD2_3C<GxEPD2_420c, GxEPD2_420c::HEIGHT> display(GxEPD2_420c(/*CS=*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
 
-#ifdef EPAPER_WAVESHARE_DEVIKT_420c
-  GxEPD2_3C<GxEPD2_270c, GxEPD2_270c::HEIGHT> display(GxEPD2_270c(/*CS=*/ 15, /*DC=*/ 27, /*RST=*/ 26, /*BUSY=*/ 25));
+#ifdef WAVESHARE_ALTERNATE_PINS
+  #define PINS /*CS=*/ 15, /*DC=*/ 27, /*RST=*/ 26, /*BUSY=*/ 25
+#else
+  #define PINS /*CS=*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4
+#endif
+
+
+#ifdef EPAPER_270c
+  // 176x264
+  GxEPD2_3C<GxEPD2_270c, GxEPD2_270c::HEIGHT> display(GxEPD2_270c(PINS));
 #endif
 
 #ifdef EPAPER_420c
-  GxEPD2_3C<GxEPD2_420c, GxEPD2_420c::HEIGHT> display(GxEPD2_420c(/*CS=*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
-  #define DISPLAY_WIDTH 400
-  #define DISPLAY_HEIGHT 300
+  // 400x300
+  GxEPD2_3C<GxEPD2_420c, GxEPD2_420c::HEIGHT> display(GxEPD2_420c(PINS));
 #endif
 
 #ifdef EPAPER_750_T7
-  GxEPD2_BW<GxEPD2_750_T7, GxEPD2_750_T7::HEIGHT> display(GxEPD2_750_T7(/*CS=*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
-  //#define DISPLAY_WIDTH 480
-  //#define DISPLAY_HEIGHT 480
+  // 800x480
+  GxEPD2_BW<GxEPD2_750_T7, GxEPD2_750_T7::HEIGHT> display(GxEPD2_750_T7(PINS));
 #endif
 
+
 WiFiManager wifiManager;
-
-RTC_DATA_ATTR int bootCount = 0;
-
-void setup22()
-{
-  Serial.begin(115200);
-
-  bootCount++;
-  Serial.println("wakeup" + String(bootCount));
-
-  pinMode(2, OUTPUT);
-  
-  digitalWrite(2, HIGH);
-  delay(1000);
-  digitalWrite(2, LOW);
-
-  Serial.println("Going to sleep now");
-  delay(200);
-  Serial.flush(); 
-
-  #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
-  #define TIME_TO_SLEEP  5        /* Time ESP32 will go to sleep (in seconds) */
-  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
-  esp_deep_sleep_start();
-}
-
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
 void setup()
 {
   //wifiManager.resetSettings();
-
   //wifiManager.setConfigPortalTimeout(120);
   //wifiManager.autoConnect(HOSTNAME);
 
+  //WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+
   Serial.begin(115200);
-
-
 
   bool res;
   res = wifiManager.autoConnect("epaper"); // auto generated AP name from chipid
@@ -128,67 +106,13 @@ void setup()
   }
   Serial.println("mDNS responder started");
 */
-  //ArduinoOTA.begin();
-
-  //MDNS.begin(HOSTNAME);  // this doesn't work, wifiManager starts mDNS
-  //MDNS.setInstanceName(HOSTNAME);
-
-  //ESP.wdtDisable();
-
-
-  // Port defaults to 3232
-  // ArduinoOTA.setPort(3232);
-
-  // Hostname defaults to esp3232-[MAC]
-  // ArduinoOTA.setHostname("myesp32");
-
-  // No authentication by default
-  // ArduinoOTA.setPassword("admin");
-
-  // Password can be set with it's md5 value as well
-  // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
-  // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
-/*
-  ArduinoOTA
-    .onStart([]() {
-      String type;
-      if (ArduinoOTA.getCommand() == U_FLASH)
-        type = "sketch";
-      else // U_SPIFFS
-        type = "filesystem";
-
-      // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-      Serial.println("Start updating " + type);
-    })
-    .onEnd([]() {
-      Serial.println("\nEnd");
-    })
-    .onProgress([](unsigned int progress, unsigned int total) {
-      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-    })
-    .onError([](ota_error_t error) {
-      Serial.printf("Error[%u]: ", error);
-      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-      else if (error == OTA_END_ERROR) Serial.println("End Failed");
-    });
-
-  ArduinoOTA.begin();
-*/
+ 
 }
 
 bool clientConnected = false;
 uint32_t pixel;
 
-void loop22()
-{
-
-}
-
 void loop() {
-  //ArduinoOTA.handle();
   //wifiManager.process();
 
 
@@ -212,7 +136,7 @@ void loop() {
       display.init();
       #endif
 
-      #ifdef WAVESHARE_ALTERNATE_SPI
+      #ifdef WAVESHARE_ALTERNATE_PINS
       // *** special handling for Waveshare ESP32 Driver board *** //
       // ********************************************************* //
       SPI.end(); // release standard SPI pins, e.g. SCK(18), MISO(19), MOSI(23), SS(5)
@@ -277,7 +201,35 @@ void loop() {
 
     display.refresh();
   }
-
-
-
 };
+
+
+
+
+
+// Low power tests
+
+RTC_DATA_ATTR int bootCount = 0;
+
+void deep_sleep_setup()
+{
+  Serial.begin(115200);
+
+  bootCount++;
+  Serial.println("wakeup" + String(bootCount));
+
+  pinMode(2, OUTPUT);
+  
+  digitalWrite(2, HIGH);
+  delay(1000);
+  digitalWrite(2, LOW);
+
+  Serial.println("Going to sleep now");
+  delay(200);
+  Serial.flush(); 
+
+  #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
+  #define TIME_TO_SLEEP  5        /* Time ESP32 will go to sleep (in seconds) */
+  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
+  esp_deep_sleep_start();
+}
