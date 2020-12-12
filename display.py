@@ -1,5 +1,12 @@
 #!/usr/bin/python3
 
+# virtualenv tutorial https://click.palletsprojects.com/en/7.x/quickstart/
+
+import click
+import yaml
+import subprocess
+
+
 import socket
 import time
 import array
@@ -9,11 +16,9 @@ import os, sys
 from PIL import Image
 from io import BytesIO
 
-IP = "192.168.1.10"
+IP = "192.168.1.7"
 PORT = 3333
 
-DISPLAY_WIDTH = 800
-DISPLAY_HEIGHT = 480
 
 from selenium import webdriver
 
@@ -33,41 +38,128 @@ from selenium import webdriver
 
 url="https://data.pocasi-data.cz//static/html/meteogram-v2.html#x=84&y=407"
 
-chrome_options = webdriver.chrome.options.Options()
-chrome_options.add_argument("--headless")
-#chrome_options.add_argument("--window-size=400,300")
-#chrome_options.add_argument("--window-size=512,384")
-chrome_options.add_argument("--window-size=800,480")
 
-DRIVER = 'chromedriver'
-driver = webdriver.Chrome(DRIVER, options=chrome_options)
-#driver.set_window_size(512, 384)
-driver.get(url)
-screenshot = driver.get_screenshot_as_png()
-driver.quit()
+def rgb_to_3c(img):
+    img.save('imagemagick_in.png')
+    command = 'convert imagemagick_in.png -dither FloydSteinberg -define dither:diffusion-amount=80%% -remap eink-3color.png -type truecolor imagemagick_out.png'
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    process.wait()
+    img = Image.open("imagemagick_out.png")  
 
-screenshot = Image.open(BytesIO(screenshot))
+def drv_webpage(url):
+    
+    scale = 1
+    if data.get('url-scale'):
+       scale = data['url-scale']
 
-target = screenshot \
-    .convert(mode="L") \
-    .resize((DISPLAY_WIDTH, DISPLAY_HEIGHT))
+    capture_w = int(data['width'] * scale)
+    capture_h = int(data['height'] * scale)
 
-target.save("out.png")
+    click.echo("Scale %s, capturew %d, capuiterh %s" % (scale, capture_w, capture_h))
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # TCP
+    chrome_options = webdriver.chrome.options.Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--window-size=%s,%s" % (capture_w, capture_h))
 
-server_address = (IP, PORT)
-print('connecting to %s port %s' % server_address)
-sock.connect(server_address)
-print("connected")
+    DRIVER = 'chromedriver'
+    driver = webdriver.Chrome(DRIVER, options=chrome_options)
+    driver.set_window_size(capture_w, capture_h)
+    driver.get(url)
+    screenshot = driver.get_screenshot_as_png()
+    driver.quit()
 
-for y in range(0, DISPLAY_HEIGHT):
-    for x in range(0, DISPLAY_WIDTH):
-        pixel = target.getpixel((x, y))
-        b = b"\x00"
-        if pixel < 250:
-            b = b"\x01"
-        sock.send(b)
-        print(x,y);
+    img = Image.open(BytesIO(screenshot))
 
-sock.close()
+    if scale != 1:
+        img = img.resize((data['width'], data['height']))
+
+    return img.convert('1').convert("RGB")
+
+
+def drv_file_image(file_name):
+    img = Image.open(file_name)  
+    img = img.resize((data['width'], data['height'])).convert('1') # convert image to black and white
+    return img
+
+def drv_file_image_3c(file_name):
+    command = 'convert autumn.jpg -resize %dx%d\!  -dither FloydSteinberg -define dither:diffusion-amount=80%% -remap eink-3color.png -type truecolor output.bmp' % (data['width'], data['height'])
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    process.wait()
+    img = Image.open("output.bmp")  
+    return img
+
+@click.command()
+@click.option('-c', '--config', default="", help='YAML configuration file.')
+def main(config):
+    """Stream images to your ESP WiFi displays"""
+    global data
+
+    try:
+        with open(config) as f:
+            data = yaml.load(f, Loader=yaml.FullLoader)
+            print(data)
+    except:
+        click.echo('File %s not found!' % config)
+        return
+  
+
+    # chrome_options = webdriver.chrome.options.Options()
+    # chrome_options.add_argument("--headless")
+    # chrome_options.add_argument("--window-size=%s,%s" % (data['width'], data['height']))
+
+    # DRIVER = 'chromedriver'
+    # driver = webdriver.Chrome(DRIVER, options=chrome_options)
+    # #driver.set_window_size(512, 384)
+    # driver.get(url)
+    # screenshot = driver.get_screenshot_as_png()
+    # driver.quit()
+
+    # screenshot = Image.open(BytesIO(screenshot))
+
+    if data.get('url'):
+        screenshot = drv_webpage(data['url'])
+    elif data.get('file_image'):
+        screenshot = drv_file_image(data['file_image'])
+    elif data.get('file_image_3c'):
+        screenshot = drv_file_image_3c(data['file_image_3c'])
+
+
+    screenshot.save("b4scale.png")
+
+    target = screenshot
+
+    target.save("out.png")
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # TCP
+
+    server_address = (data['ip'], data['port'])
+    print('connecting to %s port %s' % server_address)
+    sock.connect(server_address)
+    print("connected")
+
+    for y in range(0, data['height']):
+        for x in range(0, data['width']):
+            pixel = target.getpixel((x, y))
+
+            # if y == 0 and x < 23:
+            #     click.echo(pixel)
+
+            # (47, 36, 42) // black
+            # (216, 37, 40) // red
+            # (242, 244, 239) //white
+
+            b = b"\x01" #black
+
+            if pixel[0] > 100 and pixel[1] < 100 and pixel[2] < 100:
+                b = b"\x02" #red
+            elif pixel[0] > 100 and pixel[1] > 100 and pixel[2] > 100:
+                b = b"\x00" #white
+                
+            sock.send(b)
+            #print(x,y);
+
+    sock.close()
+    
+
+if __name__ == '__main__':
+    main()
