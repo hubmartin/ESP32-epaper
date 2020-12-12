@@ -4,10 +4,10 @@ width: 176
 height: 264
 #url: https://data.pocasi-data.cz//static/html/meteogram-v2.html#x=84&y=407
 #url: https://chiptron.cz
-#url: https://idnes.cz
+#url: https://www.seznamzpravy.cz/
+#url: https://hardwario.com
 url-scale: 3
 #file_image: lena.png
 #file_image: chess-board.jpg
-#file_image: nature.jpg
 #file_image: output.bmp
-file_image_3c: autumn.jpg
+file_image: autumn.jpg

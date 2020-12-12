@@ -7,3 +7,5 @@
 .vscode/extensions.json
 src/wifi_credentials.h
 out.png
+imagemagick_in.png
+imagemagick_out.png

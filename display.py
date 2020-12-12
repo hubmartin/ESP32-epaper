@@ -39,12 +39,14 @@ from selenium import webdriver
 url="https://data.pocasi-data.cz//static/html/meteogram-v2.html#x=84&y=407"
 
 
+# Not proud, not efficient, working ok
 def rgb_to_3c(img):
     img.save('imagemagick_in.png')
     command = 'convert imagemagick_in.png -dither FloydSteinberg -define dither:diffusion-amount=80%% -remap eink-3color.png -type truecolor imagemagick_out.png'
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     process.wait()
-    img = Image.open("imagemagick_out.png")  
+    img_load = Image.open('imagemagick_out.png')
+    return img_load.convert('RGB')
 
 def drv_webpage(url):
     
@@ -73,13 +75,14 @@ def drv_webpage(url):
     if scale != 1:
         img = img.resize((data['width'], data['height']))
 
-    return img.convert('1').convert("RGB")
+    return rgb_to_3c(img)
+    #return img.convert('1').convert("RGB")
 
 
 def drv_file_image(file_name):
     img = Image.open(file_name)  
-    img = img.resize((data['width'], data['height'])).convert('1') # convert image to black and white
-    return img
+    img = img.resize((data['width'], data['height']))
+    return rgb_to_3c(img)
 
 def drv_file_image_3c(file_name):
     command = 'convert autumn.jpg -resize %dx%d\!  -dither FloydSteinberg -define dither:diffusion-amount=80%% -remap eink-3color.png -type truecolor output.bmp' % (data['width'], data['height'])
@@ -123,12 +126,7 @@ def main(config):
     elif data.get('file_image_3c'):
         screenshot = drv_file_image_3c(data['file_image_3c'])
 
-
-    screenshot.save("b4scale.png")
-
-    target = screenshot
-
-    target.save("out.png")
+    screenshot.save("out.png")
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # TCP
 
@@ -139,7 +137,7 @@ def main(config):
 
     for y in range(0, data['height']):
         for x in range(0, data['width']):
-            pixel = target.getpixel((x, y))
+            pixel = screenshot.getpixel((x, y))
 
             # if y == 0 and x < 23:
             #     click.echo(pixel)
