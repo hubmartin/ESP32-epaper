@@ -41,12 +41,19 @@ SPI MOSI - IO23
 the rest of pins is in the constructor below
 */
 
-#define EPAPER_750_T7
+//#define EPAPER_750_T7
+#define EPAPER_WAVESHARE_DEVIKT_420c
+#define WAVESHARE_ALTERNATE_SPI
+
 //#define EPAPER_420c
 
 //GxEPD2_3C<GxEPD2_270c, GxEPD2_270c::HEIGHT> display(GxEPD2_270c(/*CS=*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
 
 //GxEPD2_3C<GxEPD2_420c, GxEPD2_420c::HEIGHT> display(GxEPD2_420c(/*CS=*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
+
+#ifdef EPAPER_WAVESHARE_DEVIKT_420c
+  GxEPD2_3C<GxEPD2_270c, GxEPD2_270c::HEIGHT> display(GxEPD2_270c(/*CS=*/ 15, /*DC=*/ 27, /*RST=*/ 26, /*BUSY=*/ 25));
+#endif
 
 #ifdef EPAPER_420c
   GxEPD2_3C<GxEPD2_420c, GxEPD2_420c::HEIGHT> display(GxEPD2_420c(/*CS=*/ SS, /*DC=*/ 17, /*RST=*/ 16, /*BUSY=*/ 4));
@@ -61,24 +68,6 @@ the rest of pins is in the constructor below
 #endif
 
 WiFiManager wifiManager;
-/*
-void drawHelloWorld() {
-
-  display.setFullWindow();
-  display.firstPage();
-
-  display.writeScreenBuffer();
-
-  for (int y=0; y < DISPLAY_HEIGHT; y++ ){
-    for (int x=0; x < DISPLAY_WIDTH; x++ ){
-      display.drawPixel(x, y, GxEPD_RED);
-    }
-  }
-
-  display.nextPage();
-  display.refresh();
-
-}*/
 
 RTC_DATA_ATTR int bootCount = 0;
 
@@ -113,6 +102,8 @@ void setup()
   //wifiManager.autoConnect(HOSTNAME);
 
   Serial.begin(115200);
+
+
 
   bool res;
   res = wifiManager.autoConnect("epaper"); // auto generated AP name from chipid
@@ -215,14 +206,26 @@ void loop() {
       clientConnected = true;
       pixel = 0;
 
-      //display.init();
+      #ifdef EPAPER_750_T7
       display.init(115200, true, 2); // 7.5"
+      #else
+      display.init();
+      #endif
+
+      #ifdef WAVESHARE_ALTERNATE_SPI
+      // *** special handling for Waveshare ESP32 Driver board *** //
+      // ********************************************************* //
+      SPI.end(); // release standard SPI pins, e.g. SCK(18), MISO(19), MOSI(23), SS(5)
+      //SPI: void begin(int8_t sck=-1, int8_t miso=-1, int8_t mosi=-1, int8_t ss=-1);
+      SPI.begin(13, 12, 14, 15); // map and init SPI pins SCK(13), MISO(12), MOSI(14), SS(15)
+      // *** end of special handling for Waveshare ESP32 Driver board *** //
+      // **************************************************************** //
+      #endif
 
       Serial.printf("Display init width: %d", display.width());
       
       display.setFullWindow();
-      
-      
+            
       //display.setPartialWindow(0, 0, display.width(), display.height() / 2);
       display.firstPage();
 
@@ -230,15 +233,15 @@ void loop() {
   }
 
   if (client.connected()){
-    Serial.printf("Client connected");
+    //Serial.printf("Client connected");
     if (int toRead = client.available()){
-      Serial.printf("Client read tot %d", toRead);
+      //Serial.printf("Client read tot %d", toRead);
       if (toRead > 100){
         toRead = 100;
       }
       char buf[toRead];
       toRead = client.readBytes(buf, toRead);
-      Serial.printf("Client read %d", toRead);
+      //Serial.printf("Client read %d", toRead);
       for (int i=0; i<toRead; i++){
         int color = GxEPD_WHITE;
         switch (buf[i]){
