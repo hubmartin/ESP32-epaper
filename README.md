@@ -14,6 +14,7 @@ This code was ported to ESP32 with these features:
 Work in progress:
 - OTA
 - Low power
+- Make the transfer initialization the opposite way - The ESP wakes up in 15 minutes from low power, connects to the server IP sending info which display, resolution and colots it has. It can also add its sensor values. Then the server renders image, could add values from the sensor itself.
 
 # Known issues
 
