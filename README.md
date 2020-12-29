@@ -1,5 +1,7 @@
 # ESP32 e-paper network display
 
+With this project you can create ESP32 WiFi + Waveshare e-paper network display. With Python script you can send image or using Selenium the whole webpage. Python tool has also simple `YAML` configuration for configuration of each display and parameters.
+
 Based on project by https://github.com/danielkucera/esp8266-epaper
 
 This code was ported to ESP32 with these features:
@@ -22,8 +24,9 @@ Work in progress:
 
 # Needed packages and tools
 
-If you use 3 color display you have to install ImageMagick.
-Python doesn't have install script for packages, you have to install `click` and `pyyaml`.. probably more packages :)
+- Selenium browser and chrome driver. [Windows instructions](https://medium.com/@patrick.yoho11/installing-selenium-and-chromedriver-on-windows-e02202ac2b08), [Linux instructions](https://tecadmin.net/setup-selenium-chromedriver-on-ubuntu/)
+- If you use 3 color display you have to install ImageMagick.
+- Python doesn't have install script for packages yet, you have to install `click` and `pyyaml`.. probably more packages :)
 
 # Firmware build
 
