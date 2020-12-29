@@ -5,6 +5,8 @@ With this project you can create ESP32 WiFi + Waveshare e-paper network display.
 https://twitter.com/hubmartin/status/1337819964238127116
 https://twitter.com/hubmartin/status/1335517146256957440
 
+![](img/esp32-eink.jpeg)
+
 # Info
 
 Based on project by https://github.com/danielkucera/esp8266-epaper
@@ -35,7 +37,7 @@ Work in progress:
 
 # Firmware build
 
-Use platformio, before compilation/upload choose CTRL+Shift+P and `Switch project environment` to `esp32doit-devkit-v1`. The other one with `ota` doesn't work for now.
+Use platformio and default working projetct `esp32doit-devkit-v1`. The other one with `ota` doesn't work for now.
 
 # Compile options
 
@@ -56,6 +58,18 @@ Use `./display.py -c <config_file>.yaml`. See the example YAML files in project 
 
 - `ip` adress and network `port`
 - `width`, `height` and number of `colors` of the display
+
+Example `420c.yaml` config
+```
+ip: 192.168.1.50
+port: 3333
+width: 400
+height: 300
+colors: 3
+url: https://hardwario.com
+url-scale: 2
+#file_image: lena.png
+```
 
 ### URL page load
 To load a page you have to define `url:` in the YAML file. You can also try optional `url-scale` scaling option. Number 3 means that the page is screen-shotted with 3x time bigger resolution than display, then scaled down.
