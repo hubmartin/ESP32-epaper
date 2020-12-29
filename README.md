@@ -14,11 +14,11 @@ This code was ported to ESP32 with these features:
 Work in progress:
 - OTA
 - Low power
-- Make the transfer initialization the opposite way - The ESP wakes up in 15 minutes from low power, connects to the server IP sending info which display, resolution and colots it has. It can also add its sensor values. Then the server renders image, could add values from the sensor itself.
+- Make the transfer initialization the opposite way - The ESP wakes up in 15 minutes from low power, connects to the server IP sending info which display, resolution and colors it has. It can also add its sensor values. Then the server renders image, could add values from the sensor itself.
 
 # Known issues
 
-- With 7.5" epaper there are some firmware issues. The code freezes after few redraws.
+- With 7.5" epaper there are some firmware issues. The code freezes after few redraws. Could be some RAM/stack issue, do not have time to investigate now.
 
 # Needed packages and tools
 
