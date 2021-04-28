@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <GxEPD2_3C.h>
 #include <GxEPD2_BW.h>
+#include <Fonts/FreeMonoBold9pt7b.h>
 
 
 #include <Adafruit_I2CDevice.h>
@@ -29,6 +30,8 @@
 WiFiServer wifiServer(3333);
 WiFiClient client;
 
+void drawStartScreen();
+
 /*
 SPI connection https://components101.com/microcontrollers/esp32-devkitc
 SPI SS - IO5 (D5)
@@ -43,8 +46,8 @@ the rest of pins is in the constructor below
 //#define EPAPER_420c
 #define EPAPER_750_T7
 
-// Uncomment if you're using Waveshare E-Paper ESP32 Driver Board
-#define WAVESHARE_ALTERNATE_PINS
+// Uncomment if you're using Waveshare E-Paper ESP32 Driver Board (ESP32 board with Epaper connector)
+//#define WAVESHARE_ALTERNATE_PINS
 
 
 #ifdef WAVESHARE_ALTERNATE_PINS
@@ -106,6 +109,26 @@ void setup()
   }
   Serial.println("mDNS responder started");
 */
+
+  #ifdef EPAPER_750_T7
+  display.init(115200, true, 2); // 7.5"
+  #else
+  display.init();
+  #endif
+
+  #ifdef WAVESHARE_ALTERNATE_PINS
+  // *** special handling for Waveshare ESP32 Driver board *** //
+  // ********************************************************* //
+  SPI.end(); // release standard SPI pins, e.g. SCK(18), MISO(19), MOSI(23), SS(5)
+  //SPI: void begin(int8_t sck=-1, int8_t miso=-1, int8_t mosi=-1, int8_t ss=-1);
+  SPI.begin(13, 12, 14, 15); // map and init SPI pins SCK(13), MISO(12), MOSI(14), SS(15)
+  // *** end of special handling for Waveshare ESP32 Driver board *** //
+  // **************************************************************** //
+  #endif
+
+  Serial.printf("Display init width: %d", display.width());
+
+  drawStartScreen();
  
 }
 
@@ -129,24 +152,6 @@ void loop() {
       client = wifiServer.available();
       clientConnected = true;
       pixel = 0;
-
-      #ifdef EPAPER_750_T7
-      display.init(115200, true, 2); // 7.5"
-      #else
-      display.init();
-      #endif
-
-      #ifdef WAVESHARE_ALTERNATE_PINS
-      // *** special handling for Waveshare ESP32 Driver board *** //
-      // ********************************************************* //
-      SPI.end(); // release standard SPI pins, e.g. SCK(18), MISO(19), MOSI(23), SS(5)
-      //SPI: void begin(int8_t sck=-1, int8_t miso=-1, int8_t mosi=-1, int8_t ss=-1);
-      SPI.begin(13, 12, 14, 15); // map and init SPI pins SCK(13), MISO(12), MOSI(14), SS(15)
-      // *** end of special handling for Waveshare ESP32 Driver board *** //
-      // **************************************************************** //
-      #endif
-
-      Serial.printf("Display init width: %d", display.width());
       
       display.setFullWindow();
             
@@ -232,4 +237,39 @@ void deep_sleep_setup()
   #define TIME_TO_SLEEP  5        /* Time ESP32 will go to sleep (in seconds) */
   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
   esp_deep_sleep_start();
+}
+
+
+
+
+
+void drawStartScreen()
+{
+  char bootText[50];
+  char ipText[20];
+
+  IPAddress ip = WiFi.localIP();
+  ip.toString().toCharArray(ipText, 16);
+
+  snprintf(bootText, sizeof(bootText), "IP %s", ipText);
+  
+  //Serial.println("helloWorld");
+  //display.setRotation(1);
+  display.setFont(&FreeMonoBold9pt7b);
+  display.setTextColor(GxEPD_BLACK);
+  int16_t tbx, tby; uint16_t tbw, tbh;
+  display.getTextBounds(bootText, 0, 0, &tbx, &tby, &tbw, &tbh);
+  // center bounding box by transposition of origin:
+  uint16_t x = ((display.width() - tbw) / 2) - tbx;
+  uint16_t y = ((display.height() - tbh) / 2) - tby;
+  display.setFullWindow();
+  display.firstPage();
+  do
+  {
+    display.fillScreen(GxEPD_WHITE);
+    display.setCursor(x, y);
+    display.print(bootText);
+  }
+  while (display.nextPage());
+  //Serial.println("helloWorld done");
 }
