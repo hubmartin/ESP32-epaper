@@ -22,6 +22,10 @@ PORT = 3333
 
 from selenium import webdriver
 
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 #$ adb logcat | grep pocasi-data
 #- waiting for device -
 #10-24 19:43:46.322 27582 27582 D b.a.a.b.a$a: [main] https://data.pocasi-data.cz/data/pocasi/v1/bulletin/dalsi4dny.json - 200
@@ -42,6 +46,7 @@ url="https://data.pocasi-data.cz//static/html/meteogram-v2.html#x=84&y=407"
 # Not proud, not efficient, working ok
 def rgb_to_3c(img):
     if data['colors'] == 3:
+        print('colors 3')
         img.save('imagemagick_in.png')
         command = 'convert imagemagick_in.png -dither FloydSteinberg -define dither:diffusion-amount=80%% -remap eink-3color.png -type truecolor imagemagick_out.png'
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
@@ -50,6 +55,7 @@ def rgb_to_3c(img):
         return img_load.convert('RGB')
 
     elif data['colors'] == 2:
+        print('colors 2')
         return img.convert('1').convert('RGB')
 
 def drv_webpage(url):
@@ -70,7 +76,21 @@ def drv_webpage(url):
     DRIVER = 'chromedriver'
     driver = webdriver.Chrome(DRIVER, options=chrome_options)
     driver.set_window_size(capture_w, capture_h)
+    print('get url')
     driver.get(url)
+
+    # try:
+    #     element = WebDriverWait(driver, 10).until(
+    #         EC.presence_of_element_located((By.ID, "meteogramChart"))
+    #     )
+    # finally:
+    #     print("quit")
+    #     driver.quit()
+
+    print('wait...')
+    driver.implicitly_wait(10)
+    
+    print('take screenshot')
     screenshot = driver.get_screenshot_as_png()
     driver.quit()
 
